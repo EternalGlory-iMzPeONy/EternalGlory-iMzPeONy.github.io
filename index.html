@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PeONy">
+<meta name="theme-color" content="#5E2A8A">
+<link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"PeONy Weekly","short_name":"PeONy","start_url":".","display":"standalone","background_color":"%23FAFAF7","theme_color":"%235E2A8A","icons":[{"src":"data:image/svg+xml,%253Csvg xmlns=%2522http://www.w3.org/2000/svg%2522 viewBox=%25220 0 100 100%2522%253E%253Crect width=%2522100%2522 height=%2522100%2522 rx=%252220%2522 fill=%2522%25235E2A8A%2522/%253E%253Ctext x=%252250%2522 y=%252265%2522 font-size=%252250%2522 text-anchor=%2522middle%2522 fill=%2522white%2522 font-family=%2522sans-serif%2522 font-weight=%2522bold%2522%253EP%253C/text%253E%253C/svg%253E","sizes":"192x192","type":"image/svg+xml"}]}'>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%235E2A8A'/%3E%3Ctext x='50' y='65' font-size='50' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%235E2A8A'/%3E%3Ctext x='50' y='65' font-size='50' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3EP%3C/text%3E%3C/svg%3E">
+<title>PeONy Weekly Dashboard</title>
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --bg-secondary: #F1EFE8;
+    --bg-card: #FFFFFF;
+    --border: #E5E2D8;
+    --border-strong: #C9C4B5;
+    --text: #2C2A24;
+    --text-secondary: #6E6A5C;
+    --text-tertiary: #A29D8B;
+    --accent: #5E2A8A;
+    --info: #185FA5;
+    --info-bg: #E6F1FB;
+    --success: #085041;
+    --success-bg: #E1F5EE;
+    --warning: #854F0B;
+    --warning-bg: #FAEEDA;
+    --danger: #A32D2D;
+    --danger-bg: #FCEBEB;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1A1816;
+      --bg-secondary: #25221E;
+      --bg-card: #2C2925;
+      --border: #3D3934;
+      --border-strong: #5A554D;
+      --text: #EBE7DC;
+      --text-secondary: #B0AB9B;
+      --text-tertiary: #807A6C;
+      --accent: #B895DC;
+      --info: #5DA3DC;
+      --info-bg: #1F3450;
+      --success: #5DCAA5;
+      --success-bg: #1A3830;
+      --warning: #EFAF4D;
+      --warning-bg: #3F2E18;
+      --danger: #E8867E;
+      --danger-bg: #3F1F1F;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Sukhumvit Set", "IBM Plex Sans Thai", sans-serif;
+    background: var(--bg); color: var(--text);
+    font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 16px;
+    padding-bottom: 90px;
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+  header { text-align: center; margin-bottom: 16px; padding-top: 8px; }
+  .eyebrow { font-size: 11px; color: var(--text-tertiary); letter-spacing: 1.5px; margin: 0 0 4px; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; }
+  .sub { font-size: 12px; color: var(--text-secondary); margin: 6px 0 0; }
+  .day-tabs { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px; }
+  .day-tab {
+    padding: 10px 4px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg-card);
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font-family: inherit; transition: all 0.15s;
+  }
+  .day-tab.active { padding: 9px 3px; border-width: 2px; }
+  .day-tab .day-letter { font-size: 12px; color: var(--text-secondary); }
+  .day-tab .day-counter { font-size: 10px; color: var(--text-tertiary); }
+  .day-tab.active .day-letter { font-weight: 600; }
+  .today-dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: currentColor; display: inline-block;
+    margin-left: 2px; vertical-align: middle;
+  }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px 14px; margin-bottom: 12px;
+  }
+  .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 6px; flex-wrap: wrap; gap: 6px;
+  }
+  .day-title { font-size: 14px; font-weight: 600; }
+  .day-stats { display: flex; gap: 12px; align-items: center; }
+  .hw-pill { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .day-pct { font-size: 12px; color: var(--text-secondary); }
+  .task-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 0; border-top: 1px solid var(--border);
+  }
+  .task-checkbox {
+    width: 22px; height: 22px;
+    border: 2px solid var(--border-strong); border-radius: 6px;
+    flex-shrink: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-card); transition: all 0.15s;
+  }
+  .task-checkbox.checked { background: var(--accent); border-color: var(--accent); }
+  .task-checkbox.checked::after { content: '✓'; color: white; font-size: 14px; font-weight: bold; }
+  .task-time {
+    font-size: 11px; color: var(--text-tertiary);
+    min-width: 52px; flex-shrink: 0; font-variant-numeric: tabular-nums;
+  }
+  .task-content { flex: 1; min-width: 0; }
+  .task-title { font-size: 14px; }
+  .task-row.done .task-title { text-decoration: line-through; color: var(--text-tertiary); }
+  .task-detail { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .level-chip { font-size: 11px; font-weight: 600; flex-shrink: 0; letter-spacing: 0.3px; }
+  .level-must { color: var(--danger); }
+  .level-should { color: var(--warning); }
+  .level-nice { color: var(--success); }
+  .level-hw { color: var(--accent); }
+  .progress-card {
+    background: var(--bg-secondary); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 12px;
+  }
+  .progress-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px; font-size: 13px;
+  }
+  .progress-row.small { font-size: 12px; color: var(--accent); }
+  .bar { height: 8px; background: var(--bg-card); border-radius: 999px; overflow: hidden; }
+  .bar.small { height: 6px; }
+  .bar-fill { height: 100%; transition: width 0.4s ease; border-radius: 999px; }
+  .bar-fill.green { background: var(--success); }
+  .bar-fill.amber { background: var(--warning); }
+  .bar-fill.red { background: var(--danger); }
+  .bar-fill.purple { background: var(--accent); }
+  .legend {
+    background: var(--bg-secondary); border-radius: 12px;
+    padding: 12px 14px; font-size: 12px;
+    color: var(--text-secondary); line-height: 1.7;
+  }
+  .footer-actions {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--bg-card); border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    display: flex; gap: 8px; justify-content: center;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+    z-index: 100;
+  }
+  .btn {
+    padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg-card);
+    font-family: inherit; font-size: 13px; cursor: pointer;
+    color: var(--text); flex: 1; max-width: 110px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .toast {
+    position: fixed; top: 16px; left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: var(--text); color: var(--bg);
+    padding: 10px 18px; border-radius: 10px;
+    font-size: 13px; z-index: 1000;
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .version-pill {
+    font-size: 10px; color: var(--text-tertiary);
+    margin-top: 4px; font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <p class="eyebrow">WEEKLY TASKS · HEALTHY WEALTH</p>
+    <h1>7 วันของ PeONy</h1>
+    <p class="sub" id="header-sub">กำลังโหลด...</p>
+    <p class="version-pill">v1.0 · อัปเดตล่าสุด 10 พ.ค. 2026</p>
+  </header>
+
+  <div class="day-tabs" id="day-tabs"></div>
+  <div id="day-content"></div>
+  <div id="weekly-progress"></div>
+
+  <div class="legend">
+    <b>คำอธิบายป้าย:</b>
+    <b style="color:var(--danger);">Must</b> ห้ามขาด ·
+    <b style="color:var(--warning);">Should</b> พยายาม ·
+    <b style="color:var(--success);">Nice</b> ถ้าไหว ·
+    <b style="color:var(--accent);">HW</b> = Healthy Wealth (Routine สุขภาพ)
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div class="footer-actions">
+  <button class="btn" onclick="exportData()">💾 Backup</button>
+  <button class="btn" onclick="importData()">📥 Restore</button>
+  <button class="btn" onclick="resetWeek()">🔄 รีเซ็ต</button>
+</div>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'peony-weekly-tasks-v2';
+
+  const HW_MORNING = { time: '08:45', title: 'HW · เช็คอินตัวเอง + น้ำเปล่า', detail: 'ร่างกาย + ใจ ก่อนกาแฟ', level: 'hw' };
+  const HW_MOVE    = { time: '12:30', title: 'HW · ขยับร่าง 20 นาที', detail: 'เดิน / ยืดเส้น / โยคะ', level: 'hw' };
+  const HW_OFF     = { time: '23:00', title: 'HW · ปิดกราฟ ปิดเทรด', detail: 'พัก 2 ชม. ก่อนนอน', level: 'hw' };
+  const HW_JOURNAL = { time: '00:00', title: 'HW · เขียน 3 บรรทัด', detail: 'ขอบคุณ / เครียด / พรุ่งนี้', level: 'hw' };
+  const SLEEP_TASK = { time: '01:00', title: 'นอน', level: 'must' };
+
+  function sortByTime(tasks) {
+    return tasks.sort((a, b) => {
+      const toSortable = (t) => {
+        const [h, m] = t.split(':').map(Number);
+        if (h < 6) return (h + 24) * 60 + m;
+        return h * 60 + m;
+      };
+      return toSortable(a.time) - toSortable(b.time);
+    });
+  }
+  function buildOffice(base) {
+    return sortByTime([...base.filter(t => t.title !== 'นอน'), HW_MORNING, HW_OFF, HW_JOURNAL, SLEEP_TASK]);
+  }
+  function buildHome(base) {
+    return sortByTime([...base.filter(t => t.title !== 'นอน'), HW_MORNING, HW_MOVE, HW_OFF, HW_JOURNAL, SLEEP_TASK]);
+  }
+
+  const days = {
+    mon: { label: 'จ', fullLabel: 'วันจันทร์ · ออฟฟิศ', color: '#185FA5',
+      tasks: buildOffice([
+        { time: '08:30', title: 'ตื่น', level: 'must' },
+        { time: '09:00', title: 'ยิม Strength Upper Body', detail: '60 นาที', level: 'must' },
+        { time: '10:00', title: 'Whey + อาบน้ำ + กินเช้า', level: 'must' },
+        { time: '11:00', title: 'Content X 1 post หรือ Idea', level: 'should' },
+        { time: '12:30', title: 'เดินทางไปออฟฟิศ', detail: '1.5 ชม. (= ขยับร่างวันนี้)', level: 'must' },
+        { time: '14:00', title: 'งานประจำ Office', level: 'must' },
+        { time: '22:00', title: 'พัก + เช็ค DM IB', level: 'should' },
+      ])},
+    tue: { label: 'อ', fullLabel: 'วันอังคาร · ออฟฟิศ', color: '#185FA5',
+      tasks: buildOffice([
+        { time: '08:30', title: 'ตื่น', level: 'must' },
+        { time: '09:00', title: 'ยิม Cardio + Core', detail: '60 นาที', level: 'must' },
+        { time: '10:00', title: 'Whey + อาบน้ำ + กินเช้า', level: 'must' },
+        { time: '11:00', title: 'Content - ตอบ Reply / DM', level: 'should' },
+        { time: '12:30', title: 'เดินทางไปออฟฟิศ', detail: '1.5 ชม. (= ขยับร่างวันนี้)', level: 'must' },
+        { time: '14:00', title: 'งานประจำ Office', level: 'must' },
+        { time: '22:00', title: 'พักผ่อน ปิดมือถือ', level: 'must' },
+      ])},
+    wed: { label: 'พ', fullLabel: 'วันพุธ · WFH', color: '#1D9E75',
+      tasks: buildHome([
+        { time: '08:30', title: 'ตื่น', level: 'must' },
+        { time: '09:00', title: 'ยิม Strength Lower Body', detail: '60 นาที', level: 'must' },
+        { time: '10:00', title: 'Whey + อาบน้ำ + กินเช้า', level: 'must' },
+        { time: '11:30', title: 'Focus Block · เรียน AI', detail: '2 ชม. เกม Mute', level: 'should' },
+        { time: '13:00', title: 'มื้อกลางวัน', level: 'must' },
+        { time: '13:30', title: 'Content / Personal Brand', detail: '90 นาที', level: 'should' },
+        { time: '15:00', title: 'งาน WFH', level: 'must' },
+      ])},
+    thu: { label: 'พฤ', fullLabel: 'วันพฤหัส · WFH', color: '#1D9E75',
+      tasks: buildHome([
+        { time: '08:30', title: 'ตื่น', level: 'must' },
+        { time: '09:00', title: 'ยิม Cardio + Stretch', detail: '60 นาที', level: 'must' },
+        { time: '10:00', title: 'Whey + อาบน้ำ + กินเช้า', level: 'must' },
+        { time: '11:30', title: 'Focus Block · Practice AI', detail: '2 ชม.', level: 'should' },
+        { time: '13:00', title: 'มื้อกลางวัน', level: 'must' },
+        { time: '13:30', title: 'Content / ตอบ Audience', level: 'should' },
+        { time: '15:00', title: 'งาน WFH', level: 'must' },
+      ])},
+    fri: { label: 'ศ', fullLabel: 'วันศุกร์ · ออฟฟิศ', color: '#185FA5',
+      tasks: buildOffice([
+        { time: '08:30', title: 'ตื่น', level: 'must' },
+        { time: '09:00', title: 'ยิม Full Body / HIIT', detail: '60 นาที', level: 'must' },
+        { time: '10:00', title: 'Whey + อาบน้ำ + กินเช้า', level: 'must' },
+        { time: '11:00', title: 'Content X · Weekly Recap', level: 'should' },
+        { time: '12:30', title: 'เดินทางไปออฟฟิศ', detail: '1.5 ชม. (= ขยับร่างวันนี้)', level: 'must' },
+        { time: '14:00', title: 'งานประจำ Office', level: 'must' },
+        { time: '22:00', title: 'ผ่อนคลาย', level: 'nice' },
+      ])},
+    sat: { label: 'ส', fullLabel: 'วันเสาร์ · พัก/Content', color: '#A35A0A',
+      tasks: buildHome([
+        { time: '09:00', title: 'ตื่นแบบสบาย', level: 'must' },
+        { time: '10:00', title: 'กินเช้า + วางแผนวัน', level: 'must' },
+        { time: '11:00', title: 'Content Big Project', detail: '3-4 ชม.', level: 'should' },
+        { time: '15:00', title: 'พักผ่อน / ครอบครัว', level: 'must' },
+        { time: '20:00', title: 'อ่านหนังสือ / Reflect', level: 'nice' },
+      ])},
+    sun: { label: 'อา', fullLabel: 'วันอาทิตย์ · Review', color: '#5E2A8A',
+      tasks: buildHome([
+        { time: '09:00', title: 'ตื่น', level: 'must' },
+        { time: '10:00', title: 'กินเช้า', level: 'must' },
+        { time: '11:00', title: 'Weekly Review สัปดาห์ที่ผ่านมา', detail: 'ติ๊กได้กี่ %', level: 'must' },
+        { time: '14:00', title: 'วางแผนสัปดาห์หน้า + ทีม Eternal Glory', level: 'must' },
+        { time: '17:00', title: 'พักผ่อน', level: 'must' },
+        { time: '22:00', title: 'เตรียมตัวเช้าวันจันทร์', level: 'should' },
+      ])},
+  };
+
+  const dayKeys = ['mon','tue','wed','thu','fri','sat','sun'];
+  const dayKeyToFullName = { mon:'จันทร์', tue:'อังคาร', wed:'พุธ', thu:'พฤหัส', fri:'ศุกร์', sat:'เสาร์', sun:'อาทิตย์' };
+
+  function getTodayKey() { const d = new Date().getDay(); return dayKeys[d === 0 ? 6 : d - 1]; }
+
+  let currentDay = getTodayKey();
+  let checkedTasks = {};
+  function taskKey(d, i) { return `${d}__${i}`; }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const stored = JSON.parse(raw);
+        if (Array.isArray(stored)) {
+          checkedTasks = {};
+          stored.forEach(t => { if (t.routineKey && t.done) checkedTasks[t.routineKey] = true; });
+        }
+      }
+    } catch (e) {}
+    document.getElementById('header-sub').textContent =
+      `วันนี้คือ${dayKeyToFullName[getTodayKey()]} · กดติ๊กได้เลย`;
+    render();
+  }
+
+  function save() {
+    const out = [];
+    Object.keys(days).forEach(dKey => {
+      days[dKey].tasks.forEach((t, idx) => {
+        const k = taskKey(dKey, idx);
+        out.push({
+          id: 'r-' + k, routineKey: k,
+          text: t.title + (t.detail ? ' (' + t.detail + ')' : ''),
+          day: dKey, time: t.time, level: t.level,
+          done: !!checkedTasks[k],
+        });
+      });
+    });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(out)); } catch (e) {}
+  }
+
+  function levelClass(l) { return 'level-' + l; }
+  function levelLabel(l) { return ({must:'Must', should:'Should', nice:'Nice', hw:'HW'})[l] || l; }
+
+  function render() {
+    const tabs = document.getElementById('day-tabs');
+    tabs.innerHTML = '';
+    dayKeys.forEach(k => {
+      const d = days[k];
+      const total = d.tasks.length;
+      const done = d.tasks.filter((_, i) => checkedTasks[taskKey(k, i)]).length;
+      const isActive = k === currentDay;
+      const isToday = k === getTodayKey();
+      const btn = document.createElement('button');
+      btn.className = 'day-tab' + (isActive ? ' active' : '');
+      if (isActive) { btn.style.borderColor = d.color; btn.style.background = d.color + '15'; }
+      btn.innerHTML = `<span class="day-letter" style="${isActive ? 'color:' + d.color : ''}">${d.label}${isToday ? '<span class="today-dot"></span>' : ''}</span><span class="day-counter" style="${done === total ? 'color:var(--success);' : ''}">${done}/${total}</span>`;
+      btn.onclick = () => { currentDay = k; render(); };
+      tabs.appendChild(btn);
+    });
+
+    const d = days[currentDay];
+    const dayDone = d.tasks.filter((_, i) => checkedTasks[taskKey(currentDay, i)]).length;
+    const dayPct = Math.round((dayDone / d.tasks.length) * 100);
+    const hwTotal = d.tasks.filter(t => t.level === 'hw').length;
+    const hwDone = d.tasks.filter((t, i) => t.level === 'hw' && checkedTasks[taskKey(currentDay, i)]).length;
+
+    let html = `<div class="card">
+      <div class="card-header">
+        <span class="day-title" style="color:${d.color}">${d.fullLabel}</span>
+        <div class="day-stats">
+          <span class="hw-pill">HW ${hwDone}/${hwTotal}</span>
+          <span class="day-pct">${dayDone}/${d.tasks.length} (${dayPct}%)</span>
+        </div>
+      </div>`;
+    d.tasks.forEach((t, idx) => {
+      const k = taskKey(currentDay, idx);
+      const done = !!checkedTasks[k];
+      const dispTime = t.time === '00:00' ? 'เที่ยงคืน' : t.time === '01:00' ? 'ตี 1' : t.time;
+      html += `<div class="task-row${done ? ' done' : ''}" data-key="${k}">
+        <div class="task-checkbox${done ? ' checked' : ''}"></div>
+        <span class="task-time">${dispTime}</span>
+        <div class="task-content">
+          <div class="task-title">${t.title}</div>
+          ${t.detail ? `<div class="task-detail">${t.detail}</div>` : ''}
+        </div>
+        <span class="level-chip ${levelClass(t.level)}">${levelLabel(t.level)}</span>
+      </div>`;
+    });
+    html += '</div>';
+    document.getElementById('day-content').innerHTML = html;
+
+    document.querySelectorAll('.task-row').forEach(r => {
+      r.onclick = () => {
+        const k = r.dataset.key;
+        if (checkedTasks[k]) delete checkedTasks[k]; else checkedTasks[k] = true;
+        save(); render();
+      };
+    });
+
+    let totalAll = 0, doneAll = 0, hwT = 0, hwDA = 0;
+    dayKeys.forEach(k => {
+      totalAll += days[k].tasks.length;
+      days[k].tasks.forEach((t, i) => {
+        if (checkedTasks[taskKey(k, i)]) doneAll++;
+        if (t.level === 'hw') { hwT++; if (checkedTasks[taskKey(k, i)]) hwDA++; }
+      });
+    });
+    const wp = Math.round((doneAll / totalAll) * 100);
+    const hp = Math.round((hwDA / hwT) * 100);
+    const wColor = wp >= 80 ? 'green' : wp >= 50 ? 'amber' : 'red';
+    document.getElementById('weekly-progress').innerHTML = `<div class="progress-card">
+      <div class="progress-row"><span style="color:var(--text-secondary)">รวมทั้งสัปดาห์</span><span style="font-weight:500">${doneAll} / ${totalAll} (${wp}%)</span></div>
+      <div class="bar" style="margin-bottom:10px"><div class="bar-fill ${wColor}" style="width:${wp}%"></div></div>
+      <div class="progress-row small"><span>Healthy Wealth (เป้า 80% = ${Math.ceil(hwT * 0.8)}/${hwT})</span><span style="font-weight:500">${hwDA} / ${hwT} (${hp}%)</span></div>
+      <div class="bar small"><div class="bar-fill purple" style="width:${hp}%"></div></div>
+    </div>`;
+  }
+
+  window.exportData = function() {
+    const data = {
+      exportedAt: new Date().toISOString(),
+      version: 'v1.0',
+      tasks: Object.keys(checkedTasks)
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `peony-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('ดาวน์โหลด Backup สำเร็จ');
+  };
+  window.importData = function() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'application/json';
+    input.onchange = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (data.tasks && Array.isArray(data.tasks)) {
+            if (!confirm(`Restore ${data.tasks.length} ติ๊ก ทับของเดิม?`)) return;
+            checkedTasks = {};
+            data.tasks.forEach(k => checkedTasks[k] = true);
+            save(); render();
+            showToast('Restore สำเร็จ');
+          }
+        } catch (err) { alert('ไฟล์ไม่ถูกต้อง'); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+  window.resetWeek = function() {
+    if (!confirm('ล้างเครื่องหมายติ๊กทั้งหมด?')) return;
+    checkedTasks = {}; save(); render();
+    showToast('รีเซ็ตเรียบร้อย');
+  };
+
+  load();
+})();
+</script>
+</body>
+</html>
