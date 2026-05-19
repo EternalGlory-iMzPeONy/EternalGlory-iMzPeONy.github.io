@@ -1,0 +1,2128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quote Studio v2 · พิมพ์ให้เป็นการ์ด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Bai+Jamjuree:wght@400;500;600;700&family=Mitr:wght@400;500;600;700&family=Sarabun:wght@400;500;700&family=Chakra+Petch:wght@400;500;600;700&family=Fraunces:ital,wght@0,400;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --paper: #f5f1ea;
+    --paper-2: #ebe5d8;
+    --accent: #d94e3a;
+    --accent-2: #2d4a3e;
+    --line: rgba(26, 26, 26, 0.12);
+    --shadow-soft: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.06);
+    --shadow-strong: 0 10px 40px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans Thai', 'Bai Jamjuree', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(circle at 20% 30%, rgba(217, 78, 58, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(45, 74, 62, 0.04) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .app {
+    position: relative;
+    z-index: 2;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 28px 32px 80px;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    border-bottom: 1.5px solid var(--ink);
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .brand { display: flex; align-items: baseline; gap: 14px; }
+
+  .brand-mark {
+    font-family: 'Instrument Serif', serif;
+    font-size: 44px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .brand-mark em { font-style: italic; color: var(--accent); }
+
+  .brand-tag {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    opacity: 0.6;
+    padding-bottom: 6px;
+  }
+
+  .meta {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    opacity: 0.6;
+    padding-bottom: 6px;
+    text-align: right;
+  }
+  .meta strong {
+    display: block;
+    color: var(--accent);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  /* MODE TABS */
+  .mode-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    padding: 4px;
+    background: rgba(255,255,255,0.4);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    width: fit-content;
+  }
+  .mode-tab {
+    padding: 10px 22px;
+    background: transparent;
+    border: none;
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    color: var(--ink);
+    opacity: 0.5;
+    border-radius: 3px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mode-tab:hover { opacity: 0.85; }
+  .mode-tab.active {
+    opacity: 1;
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .mode-tab .badge {
+    background: var(--accent);
+    color: white;
+    font-family: 'Chakra Petch', monospace;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    letter-spacing: 0;
+  }
+
+  /* WORKSPACE */
+  .workspace {
+    display: grid;
+    grid-template-columns: 340px 1fr 320px;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .workspace { grid-template-columns: 1fr; }
+  }
+
+  /* PANELS */
+  .panel {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 22px 20px;
+    position: relative;
+  }
+  .panel-num {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Instrument Serif', serif;
+    font-size: 13px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .panel-title {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-title em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--accent);
+    margin-left: 6px;
+    font-size: 14px;
+  }
+
+  /* TEXT INPUT */
+  .text-input {
+    width: 100%;
+    min-height: 160px;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--ink);
+    padding: 4px;
+  }
+  .text-input::placeholder {
+    color: rgba(26,26,26,0.35);
+    font-style: italic;
+  }
+
+  /* AI HELPER */
+  .ai-helper {
+    margin-top: 12px;
+    padding: 14px 12px;
+    background: linear-gradient(135deg, rgba(217, 78, 58, 0.04), rgba(45, 74, 62, 0.04));
+    border: 1px dashed rgba(217, 78, 58, 0.3);
+    border-radius: 4px;
+  }
+  .ai-helper-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+  .ai-helper-title svg {
+    width: 14px; height: 14px;
+  }
+  .ai-btn-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+  }
+  .ai-btn {
+    padding: 7px 4px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--ink);
+  }
+  .ai-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ai-btn span { font-family: 'Instrument Serif', serif; font-style: italic; opacity: 0.7; }
+
+  .ai-suggestions {
+    margin-top: 10px;
+    display: none;
+  }
+  .ai-suggestions.show { display: block; }
+  .ai-loading {
+    font-size: 11px;
+    opacity: 0.6;
+    font-style: italic;
+    text-align: center;
+    padding: 10px;
+  }
+  .ai-suggestion {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .ai-suggestion:hover {
+    border-color: var(--accent);
+    background: rgba(217, 78, 58, 0.03);
+  }
+  .ai-suggestion-label {
+    font-family: 'Chakra Petch', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .ai-suggestion-hint {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    font-size: 10px;
+    opacity: 0.4;
+    font-style: italic;
+  }
+
+  /* BATCH MODE INPUT */
+  .batch-input {
+    width: 100%;
+    min-height: 240px;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink);
+    padding: 4px;
+  }
+  .batch-hint {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    opacity: 0.5;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .batch-hint em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    color: var(--accent);
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 1;
+  }
+
+  .char-count {
+    font-family: 'Chakra Petch', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    opacity: 0.5;
+    margin-top: 8px;
+    text-align: right;
+  }
+
+  /* CONTROLS */
+  .control-group { margin-bottom: 18px; }
+  .control-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    opacity: 0.65;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .control-label .val {
+    font-family: 'Chakra Petch', monospace;
+    color: var(--accent);
+    opacity: 1;
+    font-weight: 600;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--line);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--ink);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: var(--accent);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--ink);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .btn-chip {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 6px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--ink);
+  }
+  .btn-chip:hover { border-color: var(--ink); background: rgba(26,26,26,0.04); }
+  .btn-chip.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .color-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .color-dot.active {
+    border-color: var(--ink);
+    transform: scale(1.1);
+  }
+  .color-dot.active::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 1px dashed var(--ink);
+    border-radius: 50%;
+  }
+
+  .font-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .font-btn {
+    padding: 10px 8px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .font-btn:hover { border-color: var(--ink); }
+  .font-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .font-btn small {
+    display: block;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.6;
+    margin-top: 2px;
+  }
+
+  /* CANVAS */
+  .canvas-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 20px;
+  }
+  .canvas-frame {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 1 / 1;
+    transition: aspect-ratio 0.3s ease;
+    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.12)) drop-shadow(0 4px 8px rgba(0,0,0,0.06));
+  }
+  .canvas-frame.ratio-4-5 { aspect-ratio: 4 / 5; max-width: 420px; }
+  .canvas-frame.ratio-9-16 { aspect-ratio: 9 / 16; max-width: 340px; }
+  .canvas-frame.ratio-16-9 { aspect-ratio: 16 / 9; max-width: 560px; }
+
+  .card {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8% 10%;
+    transition: background 0.3s ease;
+  }
+
+  .card-text {
+    width: 100%;
+    text-align: center;
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+    transition: font-size 0.2s, color 0.2s, font-weight 0.2s, text-align 0.2s, text-shadow 0.2s;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card::before, .card::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid currentColor;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .card.show-marks::before {
+    top: 16px; left: 16px;
+    border-right: none; border-bottom: none;
+    opacity: 0.4;
+  }
+  .card.show-marks::after {
+    bottom: 16px; right: 16px;
+    border-left: none; border-top: none;
+    opacity: 0.4;
+  }
+
+  .watermark {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 11px;
+    opacity: 0.3;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .canvas-toolbar {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .tool-btn {
+    flex: 1;
+    padding: 14px 16px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .tool-btn:hover { background: var(--accent); transform: translateY(-1px); }
+  .tool-btn.secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .tool-btn.secondary:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .tool-btn svg { width: 16px; height: 16px; }
+
+  .shuffle-hero {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-bottom: 18px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .shuffle-hero:hover { background: var(--ink); letter-spacing: 0.15em; }
+  .shuffle-hero em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .cat-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .cat-tab {
+    flex: 1;
+    padding: 8px 2px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    color: var(--ink);
+    opacity: 0.5;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+  }
+  .cat-tab:hover { opacity: 0.9; }
+  .cat-tab.active {
+    opacity: 1;
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .bg-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .bg-preview {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    overflow: hidden;
+    position: relative;
+  }
+  .bg-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .bg-preview.active {
+    border-color: var(--accent);
+    transform: scale(0.95);
+  }
+
+  /* PRESET SECTION */
+  .preset-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px dashed var(--line);
+  }
+  .preset-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+  }
+  .preset-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .preset-item:hover {
+    border-color: var(--ink);
+    background: rgba(26,26,26,0.03);
+  }
+  .preset-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .preset-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .preset-del {
+    background: none;
+    border: none;
+    color: var(--ink);
+    opacity: 0.3;
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .preset-del:hover { opacity: 1; color: var(--accent); }
+  .preset-empty {
+    font-size: 11px;
+    opacity: 0.5;
+    font-style: italic;
+    text-align: center;
+    padding: 16px 0;
+  }
+
+  /* SHADOW SECTION */
+  .effect-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  /* BATCH PREVIEW GRID */
+  .batch-canvas-area {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .batch-canvas-area.show { display: flex; }
+
+  .batch-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .batch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    max-height: 720px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+
+  .batch-card-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .batch-card-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));
+    border-radius: 4px;
+    overflow: hidden;
+    transition: aspect-ratio 0.3s;
+  }
+  .batch-card-frame.ratio-4-5 { aspect-ratio: 4 / 5; }
+  .batch-card-frame.ratio-9-16 { aspect-ratio: 9 / 16; }
+  .batch-card-frame.ratio-16-9 { aspect-ratio: 16 / 9; }
+
+  .batch-card {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8% 10%;
+  }
+  .batch-card-text {
+    width: 100%;
+    text-align: center;
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+    z-index: 2;
+    position: relative;
+  }
+
+  .batch-card-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .batch-mini-btn {
+    flex: 1;
+    padding: 6px 4px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-size: 10px;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.15s;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+  }
+  .batch-mini-btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .batch-summary {
+    text-align: center;
+    padding: 12px;
+    background: rgba(255,255,255,0.5);
+    border: 1px dashed var(--line);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+  }
+  .batch-summary strong {
+    color: var(--accent);
+    font-family: 'Chakra Petch', monospace;
+    font-style: normal;
+  }
+
+  /* PRESET MODAL */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,26,26,0.5);
+    z-index: 99;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--paper);
+    padding: 28px;
+    border-radius: 4px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: var(--shadow-strong);
+  }
+  .modal h3 {
+    font-family: 'Fraunces', serif;
+    margin-bottom: 14px;
+    font-size: 18px;
+  }
+  .modal input {
+    width: 100%;
+    padding: 12px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 14px;
+    outline: none;
+    margin-bottom: 14px;
+  }
+  .modal input:focus { border-color: var(--ink); }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 24px;
+    border-radius: 3px;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 100;
+    box-shadow: var(--shadow-strong);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    opacity: 0.5;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  footer em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--accent);
+    opacity: 1;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .panel { animation: fadeUp 0.5s ease-out backwards; }
+  .panel:nth-child(1) { animation-delay: 0.05s; }
+  .panel:nth-child(2) { animation-delay: 0.15s; }
+  .panel:nth-child(3) { animation-delay: 0.25s; }
+
+  .align-row .btn-chip { font-size: 14px; padding: 8px; }
+
+  /* HIGHLIGHT — สี lime ใช้กับ **คำ** ในข้อความ */
+  .card-text .hl,
+  .batch-card-text .hl {
+    color: #c5e84a;
+  }
+
+  .hl-hint {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(197, 232, 74, 0.08);
+    border-left: 2px solid #c5e84a;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink);
+    opacity: 0.8;
+    border-radius: 2px;
+  }
+  .hl-hint code {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-family: 'Chakra Petch', monospace;
+    font-size: 11px;
+  }
+
+  /* spinner */
+  .spin {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--accent);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-mark">Quote <em>Studio</em></div>
+      <div class="brand-tag">Vol.03 · พิมพ์ให้เป็นการ์ด</div>
+    </div>
+    <div class="meta">
+      <strong>EG · Eternal Glory</strong>
+      v3 · lecture bg · highlight · AI helper · presets
+    </div>
+  </header>
+
+  <!-- MODE TABS -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="single">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+      Single
+    </button>
+    <button class="mode-tab" data-mode="batch">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+      Batch
+      <span class="badge" id="batchBadge">0</span>
+    </button>
+  </div>
+
+  <!-- WORKSPACE -->
+  <div class="workspace">
+
+    <!-- LEFT PANEL: TEXT + TYPOGRAPHY -->
+    <aside class="panel">
+      <span class="panel-num">1</span>
+
+      <!-- SINGLE TEXT MODE -->
+      <div id="singleTextArea">
+        <div class="panel-title">ข้อความ <em>· Text</em></div>
+        <textarea class="text-input" id="textInput" placeholder="พิมพ์ข้อความที่อยากใส่ในการ์ดที่นี่...">มีคนเคยบอกว่า
+รวยแค่ไหน ตายไปเอาไปไม่ได้
+คือ กูไม่ได้อยากเอาอะไรไป
+กูแค่อยากมีเงินใช้
+ตอน**ยังไม่ตาย**แค่นั้นเลย</textarea>
+        <div class="char-count" id="charCount">0 ตัวอักษร</div>
+        <div class="hl-hint">
+          <span>💡 ครอบคำด้วย <code>**คำ**</code> เพื่อ <b style="color:#c5e84a; background:#1a1a1a; padding: 0 4px; border-radius: 2px;">highlight สี</b></span>
+        </div>
+
+        <!-- AI HELPER -->
+        <div class="ai-helper">
+          <div class="ai-helper-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L9 9l-7 1 5 5-1 7 6-4 6 4-1-7 5-5-7-1z"/></svg>
+            ให้ Claude ช่วยขัดคำให้คม
+          </div>
+          <div class="ai-btn-row">
+            <button class="ai-btn" data-tone="sharp">คม <span>sharp</span></button>
+            <button class="ai-btn" data-tone="soft">นุ่ม <span>soft</span></button>
+            <button class="ai-btn" data-tone="funny">ฮา <span>funny</span></button>
+          </div>
+          <div class="ai-suggestions" id="aiSuggestions"></div>
+        </div>
+      </div>
+
+      <!-- BATCH TEXT MODE -->
+      <div id="batchTextArea" class="hidden">
+        <div class="panel-title">Batch <em>· หลายใบพร้อมกัน</em></div>
+        <div class="batch-hint">พิมพ์แยกด้วย <em>--- </em>(สามขีด) — ใส่ได้สูงสุด 20 ใบ</div>
+        <textarea class="batch-input" id="batchInput" placeholder="quote ใบที่ 1&#10;ขึ้นบรรทัดใหม่ได้&#10;---&#10;quote ใบที่ 2 — ใส่ **คำ** เพื่อ highlight&#10;---&#10;quote ใบที่ 3">การพักไม่ใช่ความขี้เกียจ
+มันคือการ**ดูแลตัวเอง**
+---
+ไม่ต้องเก่งที่สุด
+แค่**พยายามที่สุด**ก็พอ
+---
+วันนี้แย่ ไม่ได้แปลว่า**พรุ่งนี้**จะแย่
+---
+เริ่ม**เล็กๆ** ดีกว่าไม่เริ่มเลย</textarea>
+        <div class="char-count" id="batchCount">0 ใบ</div>
+      </div>
+
+      <!-- FONT SECTION -->
+      <div style="margin-top: 24px;">
+        <div class="panel-title">ฟอนต์ <em>· Font</em></div>
+      </div>
+
+      <div class="control-group">
+        <div class="font-grid" id="fontGrid">
+          <button class="font-btn active" data-font="'IBM Plex Sans Thai', sans-serif" style="font-family: 'IBM Plex Sans Thai', sans-serif;">กข<small>Plex</small></button>
+          <button class="font-btn" data-font="'Bai Jamjuree', sans-serif" style="font-family: 'Bai Jamjuree', sans-serif;">กข<small>Bai Jamjuree</small></button>
+          <button class="font-btn" data-font="'Mitr', sans-serif" style="font-family: 'Mitr', sans-serif;">กข<small>Mitr</small></button>
+          <button class="font-btn" data-font="'Sarabun', sans-serif" style="font-family: 'Sarabun', sans-serif;">กข<small>Sarabun</small></button>
+          <button class="font-btn" data-font="'Chakra Petch', sans-serif" style="font-family: 'Chakra Petch', sans-serif;">กข<small>Chakra</small></button>
+          <button class="font-btn" data-font="'Fraunces', serif" style="font-family: 'Fraunces', serif;">Aa<small>Fraunces</small></button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">ขนาด <span class="val" id="sizeVal">28px</span></div>
+        <input type="range" id="sizeSlider" min="14" max="56" value="28">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">น้ำหนัก <span class="val" id="weightVal">700</span></div>
+        <input type="range" id="weightSlider" min="300" max="700" step="100" value="700">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">จัดวาง</div>
+        <div class="btn-row align-row">
+          <button class="btn-chip" data-align="left">≡</button>
+          <button class="btn-chip active" data-align="center">≣</button>
+          <button class="btn-chip" data-align="right">≢</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">สีข้อความ</div>
+        <div class="color-row" id="textColors">
+          <div class="color-dot active" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+          <div class="color-dot" data-color="#ffffff" style="background:#ffffff; border-color:var(--line)"></div>
+          <div class="color-dot" data-color="#d94e3a" style="background:#d94e3a"></div>
+          <div class="color-dot" data-color="#2d4a3e" style="background:#2d4a3e"></div>
+          <div class="color-dot" data-color="#4a3a8c" style="background:#4a3a8c"></div>
+          <div class="color-dot" data-color="#8c4a3a" style="background:#8c4a3a"></div>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">สี Highlight <span class="val" style="font-family:'Chakra Petch',monospace;">**คำ**</span></div>
+        <div class="color-row" id="hlColors">
+          <div class="color-dot active" data-color="#c5e84a" style="background:#c5e84a"></div>
+          <div class="color-dot" data-color="#ffd83a" style="background:#ffd83a"></div>
+          <div class="color-dot" data-color="#ff8a3a" style="background:#ff8a3a"></div>
+          <div class="color-dot" data-color="#ff5a7a" style="background:#ff5a7a"></div>
+          <div class="color-dot" data-color="#5ad8ff" style="background:#5ad8ff"></div>
+          <div class="color-dot" data-color="#d94e3a" style="background:#d94e3a"></div>
+        </div>
+      </div>
+
+      <!-- TEXT EFFECTS -->
+      <div style="margin-top: 24px;">
+        <div class="panel-title">เอฟเฟกต์ <em>· Effect</em></div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">โหมด</div>
+        <div class="effect-row">
+          <button class="btn-chip active" data-effect="none">ปิด</button>
+          <button class="btn-chip" data-effect="shadow">เงา</button>
+          <button class="btn-chip" data-effect="glow">เรือง</button>
+        </div>
+      </div>
+
+      <div class="control-group" id="effectIntensityGroup" style="display:none;">
+        <div class="control-label">ความเข้ม <span class="val" id="effectVal">3</span></div>
+        <input type="range" id="effectSlider" min="1" max="10" value="3">
+      </div>
+    </aside>
+
+    <!-- CENTER: CANVAS -->
+    <section class="canvas-area" id="singleCanvasArea">
+      <div class="canvas-frame" id="canvasFrame">
+        <div class="card" id="card">
+          <div class="card-text" id="cardText"></div>
+          <div class="watermark" id="watermark" style="display:none;">@ quote.studio</div>
+        </div>
+      </div>
+
+      <div class="canvas-toolbar">
+        <button class="tool-btn" id="saveBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          บันทึก PNG
+        </button>
+        <button class="tool-btn secondary" id="copyBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+      </div>
+
+      <div style="font-family: 'Instrument Serif', serif; font-style: italic; font-size: 13px; opacity: 0.5;">
+        — preview อัปเดตทันทีที่พิมพ์ —
+      </div>
+    </section>
+
+    <!-- BATCH CANVAS -->
+    <section class="batch-canvas-area" id="batchCanvasArea">
+      <div class="batch-summary">
+        <strong id="batchCountDisplay">0</strong> ใบ พร้อมส่งออก · สไตล์เดียวกันทั้งหมด
+      </div>
+      <div class="batch-controls">
+        <button class="tool-btn" id="batchDownloadAllBtn" style="flex: 2;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          ดาวน์โหลดทั้งหมด (ZIP)
+        </button>
+        <button class="tool-btn secondary" id="batchRefreshBtn" style="flex: 1;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          รีเฟรช
+        </button>
+      </div>
+      <div class="batch-grid" id="batchGrid"></div>
+    </section>
+
+    <!-- RIGHT PANEL: BG + LAYOUT + PRESETS -->
+    <aside class="panel">
+      <span class="panel-num">2</span>
+      <div class="panel-title">พื้นหลัง <em>· Background</em></div>
+
+      <button class="shuffle-hero" id="shuffleBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+        <span>สุ่ม</span><em>shuffle</em>
+      </button>
+
+      <div class="cat-tabs">
+        <button class="cat-tab active" data-cat="solid">เรียบ</button>
+        <button class="cat-tab" data-cat="gradient">Gradient</button>
+        <button class="cat-tab" data-cat="pattern">ลาย</button>
+        <button class="cat-tab" data-cat="paper">กระดาษ</button>
+        <button class="cat-tab" data-cat="lecture">Lecture</button>
+      </div>
+
+      <div class="bg-grid" id="bgGrid"></div>
+
+      <div style="margin-top: 24px;">
+        <div class="panel-title">เลย์เอาท์ <em>· Format</em></div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">อัตราส่วน</div>
+        <div class="btn-row">
+          <button class="btn-chip active" data-ratio="1-1">1:1</button>
+          <button class="btn-chip" data-ratio="4-5">4:5</button>
+          <button class="btn-chip" data-ratio="9-16">9:16</button>
+          <button class="btn-chip" data-ratio="16-9">16:9</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">ขอบมุม</div>
+        <div class="btn-row">
+          <button class="btn-chip active" data-marks="on">เปิด</button>
+          <button class="btn-chip" data-marks="off">ปิด</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">ลายเซ็น</div>
+        <div class="btn-row">
+          <button class="btn-chip" data-wm="on">เปิด</button>
+          <button class="btn-chip active" data-wm="off">ปิด</button>
+        </div>
+      </div>
+
+      <!-- PRESETS -->
+      <div class="preset-section">
+        <div class="panel-title" style="border-bottom: none; padding-bottom: 0; margin-bottom: 10px;">
+          เทมเพลต <em>· Presets</em>
+        </div>
+        <div class="preset-list" id="presetList">
+          <div class="preset-empty">ยังไม่มีเทมเพลต<br>บันทึกสไตล์ปัจจุบันด้านล่าง</div>
+        </div>
+        <button class="tool-btn" id="savePresetBtn" style="width: 100%; padding: 10px; font-size: 12px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          บันทึกเป็นเทมเพลต
+        </button>
+      </div>
+    </aside>
+
+  </div>
+
+  <footer>
+    <span>Quote Studio v3 · <em>made for Eternal Glory</em></span>
+    <span>ปี ๒๕๖๙ · Vol.03</span>
+  </footer>
+
+</div>
+
+<!-- PRESET MODAL -->
+<div class="modal-backdrop" id="presetModal">
+  <div class="modal">
+    <h3>บันทึกเทมเพลต</h3>
+    <input type="text" id="presetNameInput" placeholder="ตั้งชื่อเทมเพลต เช่น IG Daily, Quote Tuesday" maxlength="40">
+    <div class="modal-actions">
+      <button class="tool-btn secondary" id="presetCancelBtn" style="padding: 10px 20px;">ยกเลิก</button>
+      <button class="tool-btn" id="presetSaveBtn" style="padding: 10px 20px;">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">บันทึกแล้ว ✓</div>
+
+<script>
+  // ===== STATE =====
+  const state = {
+    mode: 'single', // 'single' | 'batch'
+    text: '',
+    batchText: '',
+    font: "'IBM Plex Sans Thai', sans-serif",
+    size: 28,
+    weight: 700,
+    align: 'center',
+    textColor: '#1a1a1a',
+    bgCategory: 'solid',
+    bg: null,
+    ratio: '1-1',
+    marks: true,
+    watermark: false,
+    effect: 'none', // 'none' | 'shadow' | 'glow'
+    effectIntensity: 3,
+    highlightColor: '#c5e84a', // lime default
+  };
+
+  const STORAGE_KEY = 'quote-studio-presets-v1';
+
+  // ===== BACKGROUND PRESETS =====
+  const bgPresets = {
+    solid: [
+      { name: 'cream', css: '#f5f1ea', textHint: '#1a1a1a' },
+      { name: 'ink', css: '#1a1a1a', textHint: '#f5f1ea' },
+      { name: 'rose', css: '#f4d8d4', textHint: '#1a1a1a' },
+      { name: 'sage', css: '#cdd6c5', textHint: '#1a1a1a' },
+      { name: 'butter', css: '#f5e9b8', textHint: '#1a1a1a' },
+      { name: 'sky', css: '#c8d8e8', textHint: '#1a1a1a' },
+      { name: 'lavender', css: '#d8d2e8', textHint: '#1a1a1a' },
+      { name: 'terracotta', css: '#c87858', textHint: '#fff' },
+      { name: 'midnight', css: '#1a2438', textHint: '#fff' },
+      { name: 'forest', css: '#2d4a3e', textHint: '#fff' },
+      { name: 'plum', css: '#4a2838', textHint: '#fff' },
+      { name: 'sand', css: '#e8d8b8', textHint: '#1a1a1a' },
+    ],
+    gradient: [
+      { name: 'sunset', css: 'linear-gradient(135deg, #ff9a8b 0%, #ff6a88 55%, #ff99ac 100%)', textHint: '#fff' },
+      { name: 'ocean', css: 'linear-gradient(135deg, #667db6 0%, #0082c8 50%, #0082c8 100%)', textHint: '#fff' },
+      { name: 'peach', css: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', textHint: '#5a3a2a' },
+      { name: 'mint', css: 'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)', textHint: '#1a3a1a' },
+      { name: 'violet', css: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)', textHint: '#3a1a4a' },
+      { name: 'fire', css: 'linear-gradient(135deg, #f12711 0%, #f5af19 100%)', textHint: '#fff' },
+      { name: 'cotton candy', css: 'linear-gradient(135deg, #ffafbd 0%, #ffc3a0 100%)', textHint: '#5a2a3a' },
+      { name: 'deep sea', css: 'linear-gradient(135deg, #2e3192 0%, #1bffff 100%)', textHint: '#fff' },
+      { name: 'rosegold', css: 'linear-gradient(135deg, #b06ab3 0%, #4568dc 100%)', textHint: '#fff' },
+      { name: 'mango', css: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)', textHint: '#4a2a1a' },
+      { name: 'aurora', css: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', textHint: '#1a3a3a' },
+      { name: 'midnight blush', css: 'linear-gradient(135deg, #1a1a2e 0%, #e94560 100%)', textHint: '#fff' },
+    ],
+    pattern: [
+      { name: 'dots cream', css: `radial-gradient(circle, #1a1a1a 1px, transparent 1.5px) 0 0 / 18px 18px, #f5f1ea`, textHint: '#1a1a1a' },
+      { name: 'dots rose', css: `radial-gradient(circle, #d94e3a 1.5px, transparent 2px) 0 0 / 20px 20px, #f4d8d4`, textHint: '#1a1a1a' },
+      { name: 'grid', css: `linear-gradient(#1a1a1a22 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, #1a1a1a22 1px, transparent 1px) 0 0 / 24px 24px, #f5f1ea`, textHint: '#1a1a1a' },
+      { name: 'stripes', css: `repeating-linear-gradient(45deg, transparent 0, transparent 14px, #1a1a1a 14px, #1a1a1a 15px), #f5e9b8`, textHint: '#1a1a1a' },
+      { name: 'checker', css: `repeating-conic-gradient(#1a1a1a 0% 25%, transparent 0% 50%) 0 0 / 30px 30px, #f5f1ea`, textHint: '#1a1a1a' },
+      { name: 'wavy', css: `repeating-radial-gradient(circle at 0 0, transparent 0, #f5e9b8 30px), repeating-linear-gradient(#d94e3a55, #d94e3a)`, textHint: '#1a1a1a' },
+      { name: 'noise dots', css: `radial-gradient(circle, #fff 1px, transparent 1.5px) 0 0 / 14px 14px, #2d4a3e`, textHint: '#fff' },
+      { name: 'graph', css: `linear-gradient(#0006 1px, transparent 1px) 0 0 / 100% 30px, linear-gradient(90deg, #0006 1px, transparent 1px) 0 0 / 30px 100%, #f5e9b8`, textHint: '#1a1a1a' },
+      { name: 'lines', css: `repeating-linear-gradient(0deg, #1a1a1a, #1a1a1a 1px, transparent 1px, transparent 28px), #f5f1ea`, textHint: '#1a1a1a' },
+      { name: 'cross dots', css: `radial-gradient(circle, #fff 2px, transparent 2.5px) 0 0 / 24px 24px, #c87858`, textHint: '#fff' },
+      { name: 'diagonal', css: `repeating-linear-gradient(-45deg, #2d4a3e 0 10px, #cdd6c5 10px 20px)`, textHint: '#1a1a1a' },
+      { name: 'bubbles', css: `radial-gradient(circle at 20% 30%, #ff9a8b88 0 50px, transparent 51px), radial-gradient(circle at 70% 60%, #ffafbd88 0 70px, transparent 71px), radial-gradient(circle at 50% 90%, #f5af1988 0 60px, transparent 61px), #f5f1ea`, textHint: '#1a1a1a' },
+    ],
+    paper: [
+      { name: 'kraft', css: `linear-gradient(135deg, #d4a57a 0%, #c89668 100%)`, textHint: '#3a2a1a' },
+      { name: 'notebook', css: `linear-gradient(180deg, transparent 0, transparent 31px, #94c8d8 31px, #94c8d8 32px, transparent 32px), #f5f1ea`, textHint: '#1a1a1a', bgSize: '100% 32px' },
+      { name: 'grid paper', css: `linear-gradient(#94c8d855 1px, transparent 1px) 0 0 / 100% 28px, linear-gradient(90deg, #94c8d855 1px, transparent 1px) 0 0 / 28px 100%, #fafaf5`, textHint: '#1a1a1a' },
+      { name: 'aged', css: `radial-gradient(circle at 30% 20%, #00000010, transparent 50%), radial-gradient(circle at 70% 80%, #00000015, transparent 50%), #e8dcc4`, textHint: '#3a2a1a' },
+      { name: 'parchment', css: `radial-gradient(ellipse at center, #f5e8c8 0%, #d8b890 100%)`, textHint: '#3a2a1a' },
+      { name: 'newsprint', css: `radial-gradient(circle, #1a1a1a 0.5px, transparent 1px) 0 0 / 4px 4px, #e8e2d4`, textHint: '#1a1a1a' },
+      { name: 'sticky note', css: `linear-gradient(180deg, #fff9a8 0%, #fff080 100%)`, textHint: '#3a2a00' },
+      { name: 'pink memo', css: `linear-gradient(180deg, #ffd0d0 0%, #ffb8b8 100%)`, textHint: '#5a1a1a' },
+      { name: 'craft tan', css: `repeating-linear-gradient(90deg, #c89668 0 2px, #c8966800 2px 3px), #c89668`, textHint: '#fff' },
+      { name: 'soft kraft', css: `linear-gradient(135deg, #e8c89a 0%, #d4a57a 100%)`, textHint: '#3a2a1a' },
+      { name: 'rice paper', css: `radial-gradient(circle at 50% 50%, #f5f1ea 0%, #e8e0cc 100%)`, textHint: '#3a2a1a' },
+      { name: 'lined yellow', css: `linear-gradient(180deg, transparent 0, transparent 31px, #d4a8a8 31px, #d4a8a8 32px, transparent 32px), #fff8d4`, textHint: '#1a1a1a', bgSize: '100% 32px' },
+    ],
+    lecture: [
+      { name: 'warm spotlight', css: `radial-gradient(ellipse at center, #d8d2c8 0%, #b8b0a4 55%, #6a625a 100%)`, textHint: '#ffffff' },
+      { name: 'cool spotlight', css: `radial-gradient(ellipse at center, #c8ccd0 0%, #98a0a8 55%, #4a5258 100%)`, textHint: '#ffffff' },
+      { name: 'cream beam', css: `radial-gradient(ellipse at center, #f0e8d4 0%, #c8bca0 55%, #6a5e48 100%)`, textHint: '#ffffff' },
+      { name: 'projector', css: `radial-gradient(ellipse at center, #e8e4d8 0%, #b0a89a 55%, #3a342a 100%)`, textHint: '#ffffff' },
+      { name: 'dim hall', css: `radial-gradient(ellipse at center, #909088 0%, #4a4842 55%, #1a1a18 100%)`, textHint: '#ffffff' },
+      { name: 'morning seminar', css: `radial-gradient(ellipse at center, #e0dccc 0%, #a8a294 55%, #585448 100%)`, textHint: '#ffffff' },
+      { name: 'soft light', css: `radial-gradient(ellipse at center top, #f5f1e8 0%, #b8b0a0 65%, #4a4438 100%)`, textHint: '#ffffff' },
+      { name: 'evening talk', css: `radial-gradient(ellipse at center, #d4c8b0 0%, #8a8070 55%, #2a2418 100%)`, textHint: '#ffffff' },
+    ],
+  };
+
+  // ===== DOM =====
+  const $ = (id) => document.getElementById(id);
+  const textInput = $('textInput');
+  const batchInput = $('batchInput');
+  const cardText = $('cardText');
+  const card = $('card');
+  const canvasFrame = $('canvasFrame');
+  const charCount = $('charCount');
+  const batchCount = $('batchCount');
+  const watermark = $('watermark');
+
+  // ===== EFFECT CALCULATION =====
+  function getTextShadow() {
+    if (state.effect === 'none') return 'none';
+    const i = state.effectIntensity;
+    if (state.effect === 'shadow') {
+      const x = Math.round(i * 0.6);
+      const y = Math.round(i * 0.8);
+      const blur = Math.round(i * 1.5);
+      const alpha = Math.min(0.15 + i * 0.04, 0.5);
+      return `${x}px ${y}px ${blur}px rgba(0,0,0,${alpha})`;
+    }
+    if (state.effect === 'glow') {
+      // glow uses text color for a halo
+      const blur1 = Math.round(i * 2);
+      const blur2 = Math.round(i * 4);
+      const blur3 = Math.round(i * 6);
+      const c = state.textColor;
+      // convert to rgba with alpha
+      const rgba = hexToRgba(c, 0.5);
+      const rgba2 = hexToRgba(c, 0.3);
+      return `0 0 ${blur1}px ${rgba}, 0 0 ${blur2}px ${rgba2}, 0 0 ${blur3}px ${rgba2}`;
+    }
+    return 'none';
+  }
+
+  function hexToRgba(hex, alpha) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  // ===== TEXT FORMATTER (highlight) =====
+  // แปลง **คำ** เป็น <span class="hl">คำ</span> ที่ใช้สีจาก state
+  function formatText(text) {
+    if (!text) return '';
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return escaped.replace(/\*\*([^*\n]+?)\*\*/g, `<span class="hl" style="color:${state.highlightColor};">$1</span>`);
+  }
+
+  // ===== RENDER (SINGLE) =====
+  function render() {
+    const formattedText = state.text ? formatText(state.text) : 'พิมพ์อะไรสักอย่าง...';
+    cardText.innerHTML = formattedText;
+    cardText.style.fontFamily = state.font;
+    cardText.style.fontSize = state.size + 'px';
+    cardText.style.fontWeight = state.weight;
+    cardText.style.textAlign = state.align;
+    cardText.style.color = state.textColor;
+    cardText.style.opacity = state.text ? '1' : '0.35';
+    cardText.style.textShadow = getTextShadow();
+
+    if (state.bg) {
+      card.style.background = state.bg.css;
+      if (state.bg.bgSize) card.style.backgroundSize = state.bg.bgSize;
+      else card.style.backgroundSize = '';
+    }
+
+    canvasFrame.className = 'canvas-frame ratio-' + state.ratio;
+    card.classList.toggle('show-marks', state.marks);
+    watermark.style.display = state.watermark ? 'block' : 'none';
+    watermark.style.color = state.textColor;
+
+    charCount.textContent = `${state.text.length} ตัวอักษร`;
+  }
+
+  // ===== RENDER (BATCH) =====
+  function getBatchQuotes() {
+    const parts = state.batchText
+      .split(/^---\s*$/m)
+      .map(p => p.trim())
+      .filter(Boolean)
+      .slice(0, 20);
+    return parts;
+  }
+
+  function renderBatch() {
+    const quotes = getBatchQuotes();
+    const grid = $('batchGrid');
+    grid.innerHTML = '';
+
+    $('batchCountDisplay').textContent = quotes.length;
+    $('batchBadge').textContent = quotes.length;
+    batchCount.textContent = `${quotes.length} ใบ`;
+
+    quotes.forEach((quote, idx) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'batch-card-wrap';
+
+      const frame = document.createElement('div');
+      frame.className = `batch-card-frame ratio-${state.ratio}`;
+
+      const c = document.createElement('div');
+      c.className = 'batch-card';
+      if (state.bg) {
+        c.style.background = state.bg.css;
+        if (state.bg.bgSize) c.style.backgroundSize = state.bg.bgSize;
+      }
+
+      const t = document.createElement('div');
+      t.className = 'batch-card-text';
+      // scale down font for batch preview (approx half size)
+      const scaledSize = Math.max(10, state.size * 0.55);
+      t.style.fontFamily = state.font;
+      t.style.fontSize = scaledSize + 'px';
+      t.style.fontWeight = state.weight;
+      t.style.textAlign = state.align;
+      t.style.color = state.textColor;
+      t.style.textShadow = getTextShadow();
+      t.innerHTML = formatText(quote);
+
+      c.appendChild(t);
+      frame.appendChild(c);
+      wrap.appendChild(frame);
+
+      const actions = document.createElement('div');
+      actions.className = 'batch-card-actions';
+      const dlBtn = document.createElement('button');
+      dlBtn.className = 'batch-mini-btn';
+      dlBtn.textContent = '↓ PNG';
+      dlBtn.onclick = () => downloadSingleBatch(idx, quote);
+      actions.appendChild(dlBtn);
+      wrap.appendChild(actions);
+
+      grid.appendChild(wrap);
+    });
+
+    if (quotes.length === 0) {
+      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; opacity: 0.4; font-style: italic;">พิมพ์ quote ในช่องด้านซ้าย แยกด้วย ---</div>';
+    }
+  }
+
+  // ===== BG GRID =====
+  function renderBgGrid() {
+    const grid = $('bgGrid');
+    const list = bgPresets[state.bgCategory];
+    grid.innerHTML = '';
+    list.forEach((bg) => {
+      const div = document.createElement('div');
+      div.className = 'bg-preview';
+      div.style.background = bg.css;
+      if (bg.bgSize) div.style.backgroundSize = bg.bgSize;
+      div.title = bg.name;
+      if (state.bg && state.bg.name === bg.name) div.classList.add('active');
+      div.onclick = () => {
+        state.bg = bg;
+        if (bg.textHint) {
+          state.textColor = bg.textHint;
+          document.querySelectorAll('#textColors .color-dot').forEach(d => {
+            d.classList.toggle('active', d.dataset.color === bg.textHint);
+          });
+        }
+        renderAll();
+        renderBgGrid();
+      };
+      grid.appendChild(div);
+    });
+  }
+
+  function renderAll() {
+    if (state.mode === 'single') render();
+    else renderBatch();
+  }
+
+  // ===== MODE SWITCHING =====
+  document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      state.mode = tab.dataset.mode;
+      
+      $('singleTextArea').classList.toggle('hidden', state.mode !== 'single');
+      $('batchTextArea').classList.toggle('hidden', state.mode !== 'batch');
+      $('singleCanvasArea').style.display = state.mode === 'single' ? 'flex' : 'none';
+      $('batchCanvasArea').classList.toggle('show', state.mode === 'batch');
+      
+      renderAll();
+    };
+  });
+
+  // ===== INPUTS =====
+  textInput.addEventListener('input', (e) => {
+    state.text = e.target.value;
+    render();
+  });
+
+  batchInput.addEventListener('input', (e) => {
+    state.batchText = e.target.value;
+    renderBatch();
+  });
+
+  // Fonts
+  document.querySelectorAll('#fontGrid .font-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('#fontGrid .font-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.font = btn.dataset.font;
+      renderAll();
+    };
+  });
+
+  $('sizeSlider').addEventListener('input', (e) => {
+    state.size = +e.target.value;
+    $('sizeVal').textContent = state.size + 'px';
+    renderAll();
+  });
+
+  $('weightSlider').addEventListener('input', (e) => {
+    state.weight = +e.target.value;
+    $('weightVal').textContent = state.weight;
+    renderAll();
+  });
+
+  document.querySelectorAll('[data-align]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('[data-align]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.align = btn.dataset.align;
+      renderAll();
+    };
+  });
+
+  document.querySelectorAll('#textColors .color-dot').forEach(dot => {
+    dot.onclick = () => {
+      document.querySelectorAll('#textColors .color-dot').forEach(d => d.classList.remove('active'));
+      dot.classList.add('active');
+      state.textColor = dot.dataset.color;
+      renderAll();
+    };
+  });
+
+  document.querySelectorAll('#hlColors .color-dot').forEach(dot => {
+    dot.onclick = () => {
+      document.querySelectorAll('#hlColors .color-dot').forEach(d => d.classList.remove('active'));
+      dot.classList.add('active');
+      state.highlightColor = dot.dataset.color;
+      renderAll();
+    };
+  });
+
+  document.querySelectorAll('.cat-tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      state.bgCategory = tab.dataset.cat;
+      renderBgGrid();
+    };
+  });
+
+  document.querySelectorAll('[data-ratio]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('[data-ratio]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.ratio = btn.dataset.ratio;
+      renderAll();
+    };
+  });
+
+  document.querySelectorAll('[data-marks]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('[data-marks]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.marks = btn.dataset.marks === 'on';
+      renderAll();
+    };
+  });
+
+  document.querySelectorAll('[data-wm]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('[data-wm]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.watermark = btn.dataset.wm === 'on';
+      renderAll();
+    };
+  });
+
+  // EFFECTS
+  document.querySelectorAll('[data-effect]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('[data-effect]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.effect = btn.dataset.effect;
+      $('effectIntensityGroup').style.display = state.effect === 'none' ? 'none' : 'block';
+      renderAll();
+    };
+  });
+
+  $('effectSlider').addEventListener('input', (e) => {
+    state.effectIntensity = +e.target.value;
+    $('effectVal').textContent = state.effectIntensity;
+    renderAll();
+  });
+
+  // SHUFFLE
+  $('shuffleBtn').onclick = () => {
+    const cats = Object.keys(bgPresets);
+    const cat = cats[Math.floor(Math.random() * cats.length)];
+    const list = bgPresets[cat];
+    const bg = list[Math.floor(Math.random() * list.length)];
+    state.bgCategory = cat;
+    state.bg = bg;
+    if (bg.textHint) {
+      state.textColor = bg.textHint;
+      document.querySelectorAll('#textColors .color-dot').forEach(d => {
+        d.classList.toggle('active', d.dataset.color === bg.textHint);
+      });
+    }
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
+    renderBgGrid();
+    renderAll();
+
+    if (state.mode === 'single') {
+      card.animate([
+        { transform: 'scale(0.96)', opacity: 0.7 },
+        { transform: 'scale(1)', opacity: 1 }
+      ], { duration: 250, easing: 'ease-out' });
+    }
+  };
+
+  // TOAST
+  function showToast(msg) {
+    const toast = $('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  // SAVE PNG (single)
+  $('saveBtn').onclick = async () => {
+    try {
+      const dataUrl = await htmlToImage.toPng(card, { pixelRatio: 3, quality: 1, cacheBust: true });
+      const a = document.createElement('a');
+      a.download = `quote-${Date.now()}.png`;
+      a.href = dataUrl;
+      a.click();
+      showToast('บันทึกแล้ว ✓');
+    } catch (err) {
+      console.error(err);
+      showToast('ผิดพลาด ลองอีกครั้ง');
+    }
+  };
+
+  // COPY (single)
+  $('copyBtn').onclick = async () => {
+    try {
+      const blob = await htmlToImage.toBlob(card, { pixelRatio: 3, cacheBust: true });
+      if (blob && navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([ new ClipboardItem({ 'image/png': blob }) ]);
+        showToast('Copy แล้ว ✓ ไปวางได้เลย');
+      } else {
+        showToast('Browser นี้ copy ไม่ได้ ใช้ Save แทน');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Copy ไม่สำเร็จ');
+    }
+  };
+
+  // ===== BATCH: render single card at full size for export =====
+  function buildExportCard(quote) {
+    const exportCard = document.createElement('div');
+    const sizes = {
+      '1-1': { w: 1080, h: 1080 },
+      '4-5': { w: 1080, h: 1350 },
+      '9-16': { w: 1080, h: 1920 },
+      '16-9': { w: 1920, h: 1080 },
+    };
+    const dims = sizes[state.ratio];
+    exportCard.style.cssText = `
+      width: ${dims.w}px;
+      height: ${dims.h}px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8% 10%;
+      position: fixed;
+      left: -99999px;
+      top: 0;
+      overflow: hidden;
+    `;
+    if (state.bg) {
+      exportCard.style.background = state.bg.css;
+      if (state.bg.bgSize) exportCard.style.backgroundSize = state.bg.bgSize;
+    }
+
+    // scale font: base 28px on 480px canvas → multiply by (dims.w / 480) approx
+    const scale = dims.w / 480;
+    const exportFontSize = Math.round(state.size * scale);
+
+    const t = document.createElement('div');
+    t.style.cssText = `
+      width: 100%;
+      text-align: ${state.align};
+      line-height: 1.4;
+      word-break: break-word;
+      white-space: pre-wrap;
+      font-family: ${state.font};
+      font-size: ${exportFontSize}px;
+      font-weight: ${state.weight};
+      color: ${state.textColor};
+      text-shadow: ${getTextShadow()};
+      position: relative;
+      z-index: 2;
+    `;
+    t.innerHTML = formatText(quote);
+    exportCard.appendChild(t);
+
+    // marks
+    if (state.marks) {
+      const m1 = document.createElement('div');
+      const m2 = document.createElement('div');
+      const ms = Math.round(40 * scale * 0.5);
+      const mt = Math.round(40 * scale * 0.5);
+      m1.style.cssText = `position: absolute; top: ${mt}px; left: ${mt}px; width: ${ms}px; height: ${ms}px; border: ${Math.max(2, scale*1.5)}px solid ${state.textColor}; border-right: none; border-bottom: none; opacity: 0.4;`;
+      m2.style.cssText = `position: absolute; bottom: ${mt}px; right: ${mt}px; width: ${ms}px; height: ${ms}px; border: ${Math.max(2, scale*1.5)}px solid ${state.textColor}; border-left: none; border-top: none; opacity: 0.4;`;
+      exportCard.appendChild(m1);
+      exportCard.appendChild(m2);
+    }
+
+    // watermark
+    if (state.watermark) {
+      const w = document.createElement('div');
+      const wfs = Math.round(11 * scale);
+      w.style.cssText = `position: absolute; bottom: ${Math.round(24*scale)}px; right: ${Math.round(32*scale)}px; font-family: 'Instrument Serif', serif; font-style: italic; font-size: ${wfs}px; opacity: 0.3; color: ${state.textColor};`;
+      w.textContent = '@ quote.studio';
+      exportCard.appendChild(w);
+    }
+
+    return exportCard;
+  }
+
+  async function exportCardToBlob(quote) {
+    const node = buildExportCard(quote);
+    document.body.appendChild(node);
+    try {
+      const blob = await htmlToImage.toBlob(node, { pixelRatio: 1, cacheBust: true });
+      return blob;
+    } finally {
+      document.body.removeChild(node);
+    }
+  }
+
+  async function downloadSingleBatch(idx, quote) {
+    try {
+      showToast('กำลังสร้างไฟล์...');
+      const blob = await exportCardToBlob(quote);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.download = `quote-${String(idx+1).padStart(2,'0')}.png`;
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('บันทึกแล้ว ✓');
+    } catch (err) {
+      console.error(err);
+      showToast('ผิดพลาด ลองใหม่');
+    }
+  }
+
+  $('batchDownloadAllBtn').onclick = async () => {
+    const quotes = getBatchQuotes();
+    if (!quotes.length) { showToast('ยังไม่มี quote ใส่ก่อน'); return; }
+    
+    const btn = $('batchDownloadAllBtn');
+    const origHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin"></span> กำลังสร้าง ${quotes.length} ไฟล์...`;
+
+    try {
+      const zip = new JSZip();
+      for (let i = 0; i < quotes.length; i++) {
+        btn.innerHTML = `<span class="spin"></span> สร้าง ${i+1}/${quotes.length}...`;
+        const blob = await exportCardToBlob(quotes[i]);
+        zip.file(`quote-${String(i+1).padStart(2,'0')}.png`, blob);
+      }
+      btn.innerHTML = `<span class="spin"></span> ปั้น ZIP...`;
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.download = `quotes-${Date.now()}.zip`;
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`บันทึกครบ ${quotes.length} ใบ ✓`);
+    } catch (err) {
+      console.error(err);
+      showToast('ผิดพลาด ลองใหม่');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+    }
+  };
+
+  $('batchRefreshBtn').onclick = () => {
+    renderBatch();
+    showToast('รีเฟรชแล้ว');
+  };
+
+  // ===== AI HELPER =====
+  const TONE_PROMPTS = {
+    sharp: 'ขัดให้คมขึ้น สั้น กระชับ มีพลัง โดนใจ เหมือน quote ที่คนอยากแชร์',
+    soft: 'ปรับให้นุ่มขึ้น อบอุ่น ให้กำลังใจ เหมือนเพื่อนพูดด้วยความห่วงใย',
+    funny: 'ใส่ความฮา ขำๆ มีมุก เล่นคำ แต่ยังคงประเด็นเดิมไว้',
+  };
+
+  document.querySelectorAll('.ai-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const tone = btn.dataset.tone;
+      const original = state.text.trim();
+      if (!original) {
+        showToast('พิมพ์ข้อความก่อน Claude ถึงจะช่วยขัดให้');
+        return;
+      }
+
+      const buttons = document.querySelectorAll('.ai-btn');
+      buttons.forEach(b => b.disabled = true);
+      const box = $('aiSuggestions');
+      box.classList.add('show');
+      box.innerHTML = `<div class="ai-loading"><span class="spin"></span>Claude กำลังขัดคำ...</div>`;
+
+      try {
+        const systemPrompt = `คุณเป็น copywriter ที่ขัด quote ภาษาไทยให้คมและน่าแชร์
+คำสั่ง: ${TONE_PROMPTS[tone]}
+- ตอบเป็น JSON เท่านั้น ไม่มี markdown ไม่มี \`\`\`
+- รูปแบบ: {"versions":[{"text":"..."},{"text":"..."},{"text":"..."}]}
+- ทำ 3 versions ที่แตกต่างกัน
+- คงความหมายและบรรยากาศของต้นฉบับไว้
+- ห้ามใส่เครื่องหมายคำพูดหรือ — ครอบข้อความ
+- คงการขึ้นบรรทัดใหม่ที่ทำให้อ่านเป็นจังหวะ ใช้ \\n
+- เน้นคำสำคัญ 1-2 จุดต่อ version ด้วย **คำ** (ใช้ดอกจัน 2 ตัวครอบคำที่ต้องการเน้น) เลือกคำที่เป็น core message ของ quote`;
+
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1000,
+            system: systemPrompt,
+            messages: [{ role: "user", content: `ขัด quote นี้:\n\n${original}` }],
+          })
+        });
+
+        const data = await response.json();
+        const textBlock = data.content.find(c => c.type === 'text');
+        if (!textBlock) throw new Error('ไม่มี response');
+        const clean = textBlock.text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+
+        if (!parsed.versions || !parsed.versions.length) throw new Error('format ผิด');
+
+        const labels = { sharp: 'คมขึ้น', soft: 'นุ่มขึ้น', funny: 'ขำขึ้น' };
+        box.innerHTML = parsed.versions.map((v, i) => {
+          const preview = formatText(v.text).replace(/\n/g, '<br>');
+          return `
+            <div class="ai-suggestion" data-text="${encodeURIComponent(v.text)}">
+              <div class="ai-suggestion-label">${labels[tone]} · ตัวเลือก ${i+1}</div>
+              <div>${preview}</div>
+              <div class="ai-suggestion-hint">คลิกเพื่อใช้</div>
+            </div>
+          `;
+        }).join('');
+
+        box.querySelectorAll('.ai-suggestion').forEach(el => {
+          el.onclick = () => {
+            const newText = decodeURIComponent(el.dataset.text);
+            textInput.value = newText;
+            state.text = newText;
+            render();
+            box.classList.remove('show');
+            box.innerHTML = '';
+            showToast('ใช้เวอร์ชันนี้แล้ว ✓');
+          };
+        });
+
+      } catch (err) {
+        console.error(err);
+        box.innerHTML = `<div class="ai-loading" style="color: var(--accent);">ขัดไม่ได้: ${err.message}<br><small>ลองอีกครั้งหรือพิมพ์เพิ่มเติม</small></div>`;
+      } finally {
+        buttons.forEach(b => b.disabled = false);
+      }
+    };
+  });
+
+  // ===== PRESETS =====
+  function loadPresets() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  }
+  function savePresets(presets) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(presets)); } catch {}
+  }
+
+  function renderPresets() {
+    const list = $('presetList');
+    const presets = loadPresets();
+    if (!presets.length) {
+      list.innerHTML = `<div class="preset-empty">ยังไม่มีเทมเพลต<br>บันทึกสไตล์ปัจจุบันด้านล่าง</div>`;
+      return;
+    }
+    list.innerHTML = '';
+    presets.forEach((p, idx) => {
+      const item = document.createElement('div');
+      item.className = 'preset-item';
+      const thumbBg = p.bg ? p.bg.css : '#f5f1ea';
+      item.innerHTML = `
+        <div class="preset-thumb" style="background: ${thumbBg};"></div>
+        <div class="preset-name">${escapeHtml(p.name)}</div>
+        <button class="preset-del" data-idx="${idx}" title="ลบ">✕</button>
+      `;
+      item.onclick = (e) => {
+        if (e.target.classList.contains('preset-del')) return;
+        applyPreset(p);
+        showToast(`โหลด "${p.name}" แล้ว ✓`);
+      };
+      list.appendChild(item);
+    });
+    list.querySelectorAll('.preset-del').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const idx = +btn.dataset.idx;
+        const presets = loadPresets();
+        if (confirm(`ลบเทมเพลต "${presets[idx].name}"?`)) {
+          presets.splice(idx, 1);
+          savePresets(presets);
+          renderPresets();
+          showToast('ลบแล้ว');
+        }
+      };
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function applyPreset(p) {
+    state.font = p.font;
+    state.size = p.size;
+    state.weight = p.weight;
+    state.align = p.align;
+    state.textColor = p.textColor;
+    state.bg = p.bg;
+    state.bgCategory = p.bgCategory;
+    state.ratio = p.ratio;
+    state.marks = p.marks;
+    state.watermark = p.watermark;
+    state.effect = p.effect || 'none';
+    state.effectIntensity = p.effectIntensity || 3;
+    state.highlightColor = p.highlightColor || '#c5e84a';
+
+    // update UI
+    document.querySelectorAll('#fontGrid .font-btn').forEach(b => b.classList.toggle('active', b.dataset.font === state.font));
+    $('sizeSlider').value = state.size; $('sizeVal').textContent = state.size + 'px';
+    $('weightSlider').value = state.weight; $('weightVal').textContent = state.weight;
+    document.querySelectorAll('[data-align]').forEach(b => b.classList.toggle('active', b.dataset.align === state.align));
+    document.querySelectorAll('#textColors .color-dot').forEach(d => d.classList.toggle('active', d.dataset.color === state.textColor));
+    document.querySelectorAll('#hlColors .color-dot').forEach(d => d.classList.toggle('active', d.dataset.color === state.highlightColor));
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.toggle('active', t.dataset.cat === state.bgCategory));
+    document.querySelectorAll('[data-ratio]').forEach(b => b.classList.toggle('active', b.dataset.ratio === state.ratio));
+    document.querySelectorAll('[data-marks]').forEach(b => b.classList.toggle('active', (b.dataset.marks === 'on') === state.marks));
+    document.querySelectorAll('[data-wm]').forEach(b => b.classList.toggle('active', (b.dataset.wm === 'on') === state.watermark));
+    document.querySelectorAll('[data-effect]').forEach(b => b.classList.toggle('active', b.dataset.effect === state.effect));
+    $('effectIntensityGroup').style.display = state.effect === 'none' ? 'none' : 'block';
+    $('effectSlider').value = state.effectIntensity; $('effectVal').textContent = state.effectIntensity;
+
+    renderBgGrid();
+    renderAll();
+  }
+
+  $('savePresetBtn').onclick = () => {
+    $('presetModal').classList.add('show');
+    $('presetNameInput').value = '';
+    setTimeout(() => $('presetNameInput').focus(), 100);
+  };
+
+  $('presetCancelBtn').onclick = () => {
+    $('presetModal').classList.remove('show');
+  };
+
+  $('presetSaveBtn').onclick = () => {
+    const name = $('presetNameInput').value.trim();
+    if (!name) { showToast('ตั้งชื่อก่อน'); return; }
+    const presets = loadPresets();
+    presets.unshift({
+      name,
+      font: state.font,
+      size: state.size,
+      weight: state.weight,
+      align: state.align,
+      textColor: state.textColor,
+      bg: state.bg,
+      bgCategory: state.bgCategory,
+      ratio: state.ratio,
+      marks: state.marks,
+      watermark: state.watermark,
+      effect: state.effect,
+      effectIntensity: state.effectIntensity,
+      highlightColor: state.highlightColor,
+      ts: Date.now(),
+    });
+    if (presets.length > 20) presets.length = 20;
+    savePresets(presets);
+    renderPresets();
+    $('presetModal').classList.remove('show');
+    showToast(`บันทึก "${name}" แล้ว ✓`);
+  };
+
+  $('presetNameInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('presetSaveBtn').click();
+    if (e.key === 'Escape') $('presetCancelBtn').click();
+  });
+
+  // close modal on backdrop click
+  $('presetModal').addEventListener('click', (e) => {
+    if (e.target === $('presetModal')) $('presetCancelBtn').click();
+  });
+
+  // ===== INIT =====
+  state.text = textInput.value;
+  state.batchText = batchInput.value;
+  state.bg = bgPresets.solid[0];
+  renderBgGrid();
+  renderPresets();
+  renderAll();
+</script>
+
+</body>
+</html>
